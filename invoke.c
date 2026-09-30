@@ -1385,14 +1385,20 @@ static int sysv_fcstart(struct dsym const *proc, int numparams, int start, struc
 	return(0);	// Return 0=left_to_right, 1=right_to_left
 }
 
+// AIR 2026-09-30
 static void sysv_fcend(struct dsym const *proc, int numparams, int value)
 /*************************************************************************/
 {
-	if (proc->e.procinfo->stackAdj != 0)
-		AddLineQueueX("add %r, %d", T_RSP, NUMQUAL 8);
+    int cleanup = proc->e.procinfo->stackAdj;
 
-	proc->e.procinfo->stackAdj = 0;
-	return;
+    if (cleanup & 15)
+        cleanup += 8;
+
+    if (cleanup != 0)
+        AddLineQueueX("add %r, %d", T_RSP, NUMQUAL cleanup);
+
+    proc->e.procinfo->stackAdj = 0;
+    return;
 }
 
 /* Return a 0-7 index for any SystemV call reserved register */
@@ -4543,7 +4549,8 @@ ret_code InvokeDirective(int i, struct asm_tok tokenarray[])
 		}
 		if (proc->sym.langtype == LANG_SYSVCALL)
 		{
-			for (j = proc->e.procinfo->stackOpCount; j >= 0; j--)
+			// AIR 2026-09-30
+			for (j = proc->e.procinfo->stackOpCount - 1; j >= 0; j--)
 			{
 				AddLineQueueX(proc->e.procinfo->stackOps[j]);
 			}
