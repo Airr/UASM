@@ -32,7 +32,9 @@
 #ifndef _GLOBALS_H_INCLUDED
 #define _GLOBALS_H_INCLUDED
 
-#define _CRT_DISABLE_PERFCRIT_LOCKS
+#ifdef _MSC_VER
+    #define _CRT_DISABLE_PERFCRIT_LOCKS
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,8 +49,21 @@
 #ifndef __WATCOMC__
 #define _memicmp strncasecmp
 #endif
-#define _ltoa   ltoa
-#define _strupr strupr
+// #define _ltoa   ltoa
+
+static inline char *uasm_strupr(char *src)
+{
+    char *p;
+
+    for (p = src; *p; ++p) {
+        if (*p >= 'a' && *p <= 'z')
+            *p &= ~0x20;
+    }
+
+    return src;
+}
+
+#define _strupr uasm_strupr
 
 #elif defined(__POCC__)
 
@@ -201,11 +216,10 @@
 #include "queue.h"
 
 /* Uasm version info */
-#ifdef _WIN64
 #define _UASM_VERSION_STR_ "2.57"
-#else
-#define _UASM_VERSION_STR_ "2.57"
-#endif
+
+
+
 #define _UASM_VERSION_INT_ 257
 #define _UASM_VERSION_SUFFIX_ "pre"
 #define _UASM_VERSION_ _UASM_VERSION_STR_ //_UASM_VERSION_SUFFIX_
@@ -902,14 +916,14 @@ struct format_options {
 /* global variables */
 
 /* global strings for arch:sse/avx instructions to use */
-extern const char* MOVE_ALIGNED_FLOAT();
-extern const char* MOVE_ALIGNED_INT();
-extern const char* MOVE_UNALIGNED_FLOAT();
-extern const char* MOVE_UNALIGNED_INT();
-extern const char* MOVE_SINGLE();
-extern const char* MOVE_DOUBLE();
-extern const char* MOVE_SIMD_DWORD();
-extern const char* MOVE_SIMD_QWORD();
+extern const char *MOVE_ALIGNED_FLOAT(void);
+extern const char *MOVE_ALIGNED_INT(void);
+extern const char *MOVE_UNALIGNED_FLOAT(void);
+extern const char *MOVE_UNALIGNED_INT(void);
+extern const char *MOVE_SINGLE(void);
+extern const char *MOVE_DOUBLE(void);
+extern const char *MOVE_SIMD_DWORD(void);
+extern const char *MOVE_SIMD_QWORD(void);
 
 /* global flag to indicate when inside macro body */
 extern bool inMacroBody;

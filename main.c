@@ -61,7 +61,8 @@ static void genfailure( int signo )
 int main(int argc, char **argv)
 /*******************************/
 {
-	char const *pEnv;
+    char emptyEnv[] = "";
+	char    *pEnv;
 	int     numArgs = 0;
 	int     numFiles = 0;
 	int     rc = 0;
@@ -91,7 +92,7 @@ int main(int argc, char **argv)
 
 	pEnv = getenv("UASM");
 	if (pEnv == NULL)
-		pEnv = "";
+		pEnv = emptyEnv;
 	argv[0] = pEnv;
 	
 	/* Set the default module architecture to SSE */

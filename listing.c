@@ -320,7 +320,7 @@ void LstWrite(enum lsttype type, uint_32 oldofs, void* value)
         if ( ModuleInfo.GeneratedCode )
             ll.buffer[28] = '*';
         if ( MacroLevel ) {
-            len = sprintf( &ll.buffer[29], "%u", MacroLevel );
+            len = snprintf( &ll.buffer[29], sizeof(ll.buffer) - 29, "%u", MacroLevel );
             ll.buffer[29+len] = ' ';
         }
         if ( srcfile != ModuleInfo.srcfile ) {

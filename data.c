@@ -89,6 +89,7 @@ extern UINT_PTR UTF8toWideChar(const unsigned char *pSource, UINT_PTR nSourceLen
 static ret_code data_item( int *, struct asm_tok[], struct asym *, uint_32, const struct asym *, uint_32, bool inside_struct, bool, bool, int );
 
 #define OutputDataBytes( x, y ) OutputBytes( x, y, NULL )
+extern void OutputInterleavedBytes( const unsigned char *, int len, struct fixup * ); /* defined in assemble.c */
 #define OutputInterleavedDataBytes( x, y ) OutputInterleavedBytes( x, y, NULL );
 
 /* This function shifts left 128 for the RECORD */

@@ -1,4 +1,7 @@
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include <time.h>
 #include "globals.h"
@@ -34,15 +37,15 @@
 #define MACRO_COUNT32 36
 
 /* MACRO names  */
-char *macName64[] = {
+const char * const macName64[] = {
   "NOTMASK128", "GETMASK128", "REGS15STORAGE", "MOV64", "MOV128", "MOVXMMR128","SLXMMR","SHIFTLEFT128","SRXMMR","SHIFTRIGHT128","MEMALLOC", "MEMFREE", "CSTR", "WSTR", "FP4", "FP8", "FP10", "LOADSS", "LOADSD", "LOADPS", "ALIGNADDR", "RV", "REPARG", "EXPAND_PREFIX", "_ARRAY", "_DELETEARRAY", "OINTERFACE", "ENDOINTERFACE", "CVIRTUAL", "CLASS", "ENDCLASS", "CMETHOD", "METHOD", "STATICMETHOD", "VECMETHOD", "STATICVECMETHOD", "ENDMETHOD", "_DECLARE", "_STATICREF", "_NEW", "_RBXNEW", "_ITEM", "_ITEMR", "_INVOKE", "_I", "_STATIC", "_DELETE", "_VINVOKE", "_V", "CSTATIC", "LOADMSS", "LOADMSD", "UINVOKE", "ASFLOAT", "ASDOUBLE", "R4P", "R8P", "arginvoke", "COMINTERFACE", "ENDCOMINTERFACE", "ENDMETHODS", "_DEREF", "_DEREFI", "_SINVOKE", "RAWINTERFACE", "ENDRAWINTERFACE", "_DEREFR", "_DEREFRR","STDFUNC"
 };
-char *macName32[] = {
+const char * const macName32[] = {
  "NOTMASK128", "GETMASK128", "MOV64", "MOV128", "MOVXMMR128","SLXMMR","SHIFTLEFT128","SRXMMR","SHIFTRIGHT128","MEMALLOC","MEMFREE","CSTR","WSTR","FP4","FP8","FP10","LOADSS","LOADPS","ALIGNADDR", "RV", "REPARG", "EXPAND_PREFIX", "LOADMSS", "LOADMSD", "UINVOKE", "ASFLOAT", "ASDOUBLE", "R4P", "R8P", "arginvoke", "COMINTERFACE", "ENDCOMINTERFACE", "_VINVOKE", "_V", "CVIRTUAL", "ENDMETHODS"
 };
 
 /* MACRO definitions */
-char *macDef64[] = {
+const char * const macDef64[] = {
 	"NOTMASK128 MACRO reg:REQ, field:REQ",
 	"GETMASK128 MACRO reg:REQ, field:REQ",
 	"REGS15STORAGE MACRO",
@@ -113,7 +116,7 @@ char *macDef64[] = {
 	"_DEREFRR MACRO dref:REQ, itype:REQ, proc:REQ, argCount:REQ, argsAndRefs:VARARG",
 	"STDFUNC MACRO method:REQ, retType:REQ, protoDef:VARARG",
 };
-char *macDef32[] = {
+const char * const macDef32[] = {
 	"NOTMASK128 MACRO reg:REQ, field:REQ",
 	"GETMASK128 MACRO reg:REQ, field:REQ",
 	"MOV64 MACRO dst:REQ, imm:REQ",
@@ -226,7 +229,7 @@ void InitAutoMacros64(void)
 
 	//                    1   2   3   4  5  6  7   8   9   10  11 12 13  14 15 16 17 18 19 20  21 22 23  24  25  26 27 28  29  30  31  32 33  34  35  36  37  38 39 40  41  42 43 44  45  46  47  48  49  50 51  52  53  54 55 56 57 58   59  60 61 62   63   64  65  66 67 68 69
 	uint_32 macroLen[] = {17, 11, 29, 3, 3, 8, 37, 33, 37, 33, 7, 6, 10, 6, 7, 7, 7, 8, 8, 10, 3, 7, 11, 19, 10, 2, 10, 2, 18,  9, 14, 6, 39, 39, 39, 39, 12, 5, 2, 20, 21, 2, 2, 11, 38, 38, 11, 45, 91, 6, 10, 10, 37, 1, 1, 1, 1, 256, 10, 6, 6, 106, 137, 11, 7 , 2, 9, 4, 18 }; // Count of individual lines of macro-body code.
-	char *macCode[] = {
+	const char * const macCode[] = {
 /*1 NOTMASK128*/		"IFNDEF GMASK",".data","GMASK OWORD 0","ENDIF","IFNDEF NOTMASK",".data","NOTMASK OWORD -1","ENDIF",".code","IF @Arch EQ 1","movups reg, MASK field","pxor reg, NOTMASK","ELSE","vmovups reg, MASK field","vpxor reg, reg, NOTMASK","ENDIF","ENDM",NULL,
 /*2 GETMASK128*/		"IFNDEF GMASK",".data","GMASK OWORD 0","ENDIF",".code","IF @Arch EQ 1","movups reg, MASK field","ELSE","vmovups reg, MASK field","ENDIF","ENDM",NULL,
 /*3 REGS15STORAGE*/		"IFNDEF RRAX",".data?", " RRAX dq ?", " RRCX dq ?", " RRDX dq ?", " RRBX dq ?", " RRDI dq ?", " RRSI dq ?", " RRBP dq ?", " RRSP dq ?", " RR8  dq ?", " RR9  dq ?", " RR10 dq ?", " RR11 dq ?", " RR12 dq ?", " RR13 dq ?", " RR14 dq ?", " RR15 dq ?", " RXMM0 OWORD ?", " RXMM1 OWORD ?", " RXMM2 OWORD ?", " RXMM3 OWORD ?", " RXMM4 OWORD ?", " RXMM5 OWORD ?", " RXMM6 OWORD ?", " RXMM7 OWORD ?", "ENDIF", " .code", "ENDM", NULL,
@@ -234,7 +237,7 @@ void InitAutoMacros64(void)
 /*5 MOV128*/			"MOV64 dst, immHi", "MOV64 dst + 8, immLo", "ENDM", NULL,
 /*6 MOVXMMR128*/		"LOCAL savexmm",".data?","savexmm OWORD ?",".code","MOV64 savexmm, immHi","MOV64 savexmm + 8, immLo","vmovups dst,savexmm","ENDM", NULL,
 /*7 SLXMMR*/			"LOCAL mmr","LOCAL saverax","LOCAL savercx","LOCAL saversi",".data?","saverax QWORD ?","savercx QWORD ?","saversi QWORD ?","mmr OWORD ?",".code","mov saverax,rax","mov savercx,rcx","mov saversi,rsi","mov ecx, cnt","and ecx,7fh","vmovups mmr, xmm128","lea  rsi,mmr",".if (cl >=  0x40)","mov rax, qword ptr[rsi+8]","mov qword ptr[rsi],rax","sub ecx, 64","shr qword ptr[rsi], cl ","xor eax,eax","mov qword ptr[rsi+8],rax",".else ","mov rax,qword ptr[rsi+8]","shr qword ptr[rsi],cl","shr qword ptr[rsi+8],cl","neg cl","shl rax, cl","or qword ptr[rsi],rax",".endif ","mov rax,saverax","mov rcx,savercx","mov rsi,saversi","vmovups xmm128,mmr ","ENDM", NULL,
-/*8 SHIFTLEFT128*/		"LOCAL saverax","LOCAL savercx","LOCAL saversi",".data?","saverax QWORD ?","savercx QWORD ?","saversi QWORD ?",".code","mov saverax,rax","mov savercx,rcx","mov saversi,rsi","mov  rsi,mmr","mov ecx, cnt","and ecx,7fh",".if (cl >=  0x40)","mov rax, qword ptr[rsi+8]","mov qword ptr[rsi],rax","sub ecx, 64","shr qword ptr[rsi], cl ","xor eax,eax","mov qword ptr[rsi+8],rax",".else ","mov rax,qword ptr[rsi+8]","shr qword ptr[rsi],cl","shr qword ptr[rsi+8],cl","neg cl","shl rax, cl","or qword ptr[rsi],rax",".endif ","mov rax,saverax","mov rcx,savercx","mov rcx,saversi","ENDM", NULL,
+/*8 SHIFTLEFT128*/		"LOCAL saverax","LOCAL savercx","LOCAL saversi",".data?","saverax QWORD ?","savercx QWORD ?","saversi QWORD ?",".code","mov saverax,rax","mov savercx,rcx","mov saversi,rsi","mov  rsi,mmr","mov ecx, cnt","and ecx,7fh",".if (cl >=  0x40)","mov rax, qword ptr[rsi+8]","mov qword ptr[rsi],rax","sub ecx, 64","shr qword ptr[rsi], cl ","xor eax,eax","mov qword ptr[rsi+8],rax",".else ","mov rax,qword ptr[rsi+8]","shr qword ptr[rsi],cl","shr qword ptr[rsi+8],cl","neg cl","shl rax, cl","or qword ptr[rsi],rax",".endif ","mov rax,saverax","mov rcx,savercx","mov rsi,saversi","ENDM", NULL,
 /*9 SRXMMR*/			"LOCAL mmr","LOCAL saverax","LOCAL savercx","LOCAL saversi",".data?","saverax QWORD ?","savercx QWORD ?","saversi QWORD ?","mmr OWORD ?",".code","mov saverax,rax","mov savercx,rcx","mov saversi,rsi","mov ecx, cnt","and ecx,7fh","vmovups mmr, xmm128","lea  rsi,mmr",".if (cl >=  0x40)","mov rax, qword ptr[rsi]","mov qword ptr[rsi+8],rax","sub ecx, 64","shl qword ptr[rsi+8], cl","xor eax,eax","mov qword ptr[rsi],rax",".else ","mov rax,qword ptr[rsi]","shl qword ptr[rsi],cl","shl qword ptr[rsi+8],cl","neg cl","shr rax, cl","or qword ptr[rsi+8],rax",".endif ","mov rax,saverax","mov rcx,savercx","mov rsi,saversi","vmovups xmm128,mmr ","ENDM",NULL,
 /*10 SHIFTRIGHT128*/	"LOCAL saverax","LOCAL savercx","LOCAL saversi",".data?","saverax QWORD ?","savercx QWORD ?","saversi QWORD ?",".code","mov saverax,rax","mov savercx,rcx","mov saversi,rsi","mov  rsi,mmr","mov ecx, cnt","and ecx,7fh",".if (cl >=  0x40)","mov rax, qword ptr[rsi]","mov qword ptr[rsi+8],rax","sub ecx, 64","shl qword ptr[rsi+8], cl ","xor eax,eax","mov qword ptr[rsi],rax",".else ","mov rax,qword ptr[rsi]","shl qword ptr[rsi],cl","shl qword ptr[rsi+8],cl","neg cl","shr rax, cl","or qword ptr[rsi+8],rax",".endif ","mov rax,saverax","mov rcx,savercx","mov rsi,saversi","ENDM",NULL,
 /*11 MEMALLOC*/			"IF @Platform EQ 1", "INVOKE HeapAlloc,RV(GetProcessHeap),0,aSize", "ELSE", "INVOKE malloc,aSize", "ENDIF", "ALIGNADDR rax, 16", "endm", NULL,
@@ -293,7 +296,7 @@ void InitAutoMacros64(void)
 /*64 _SINVOKE*/			"fnex TEXTEQU <_>", "fnex CATSTR fnex, <&className&>", "fnex CATSTR fnex, <_>", "fnex CATSTR fnex, <&method&>", "IFNB <args>", "fnex2 TEXTEQU <invoke fnex, &args&>", "ELSE", "fnex2 TEXTEQU <invoke fnex>", "ENDIF", "fnex2", "ENDM", NULL,
 /*65 RAWINTERFACE*/		"curClass TEXTEQU <CName>", "% __&CName&_size = 0", "@CatStr(CName, < RAWSTRUCT >)", "ptrDefS TEXTEQU <psr>", "ptrDefS CATSTR ptrDefS, <&curClass&>, < TYPEDEF PTR >, <&curClass&>","% ptrDefS", "ENDM", NULL,
 /*66 ENDRAWINTERFACE*/	"curClass ENDS", "ENDM", NULL,
-/*67 _DEREFR */			"LOCAL argstr", "argstr TEXTEQU <>", "IFNB <&argsAndRegs&>", "mov rax,dref","% invoke [rax].&itype.&proc, &argsAndRefs", "ELSE", "% invoke [rax].&itype.&proc", "ENDIF","ENDM", NULL,
+/*67 _DEREFR */			"LOCAL argstr", "argstr TEXTEQU <>", "IFNB <&argsAndRefs&>", "mov rax,dref","% invoke [rax].&itype.&proc, &argsAndRefs", "ELSE", "% invoke [rax].&itype.&proc", "ENDIF","ENDM", NULL,
 /*68 _DEREFRR */		"LOCAL argstr", "argstr TEXTEQU <>", "% invoke &dref&.&itype.&proc, &argsAndRefs", "ENDM", NULL,
 /*69 STDFUNC */			"LOCAL sz1, sz2","pDef CATSTR <TYPEDEF PROTO >,<(&retType&) >","IFNB <protoDef>","pDef CATSTR pDef, <, >, <&protoDef>","ENDIF","sz2 CATSTR <_>, curClass, <_&method>, <Pto>","% &sz2 &pDef","% sz1 typedef PTR &sz2","% method sz1 0","% __&curClass&_size = __&curClass&_size + 8", "fnex TEXTEQU <_>","fnex CATSTR fnex, curClass, <_>, <&method&>, < PROTO >, <(&retType&) >","IFNB <&protoDef>","fnex CATSTR fnex, <, >, <&protoDef&>","ELSE","ENDIF","fnex", "ENDM", NULL,
     };	
@@ -307,8 +310,8 @@ void InitAutoMacros64(void)
 			if(srcLines[j])
 				strcpy(srcLines[j], macCode[(start_pos + j)]);
 		}
-		mac = CreateMacro(macName64[i]);
-		ModuleInfo.token_count = Tokenize(macDef64[i], 0, ModuleInfo.tokenarray, 0);
+		mac = CreateMacro((char *)macName64[i]);
+		ModuleInfo.token_count = Tokenize((char *)macDef64[i], 0, ModuleInfo.tokenarray, 0);
 		StoreAutoMacro(mac, 2, ModuleInfo.tokenarray, TRUE, srcLines, 0, macroLen[i]);
 		start_pos += macroLen[i] + 1;
 	}
@@ -323,7 +326,7 @@ void InitAutoMacros32(void)
 	char  *srcLines[128]; // NB: 128 is the max number of lines of macro code per macro.
 
 	uint_32 macroLen[] = {17, 11, 3, 3, 8, 54, 46, 54, 46, 7, 6, 6, 6, 7, 7, 7, 8, 10, 3, 7, 11, 19, 10, 10, 37, 1, 1, 1, 1, 37, 6, 2, 23, 54, 10, 6 }; // Count of individual lines of macro-body code.
-	char *macCode[] = {
+	const char * const macCode[] = {
 		"IFNDEF GMASK",".data","GMASK OWORD 0","ENDIF","IFNDEF NOTMASK",".data","NOTMASK OWORD -1","ENDIF",".code","IF @Arch EQ 1","movups reg, MASK field","pxor reg, NOTMASK","ELSE","vmovups reg, MASK field","vpxor reg, reg, NOTMASK","ENDIF","ENDM",NULL,
 		"IFNDEF GMASK",".data","GMASK OWORD 0","ENDIF",".code","IF @Arch EQ 1","movups reg, MASK field","ELSE","vmovups reg, MASK field","ENDIF","ENDM",NULL,
 		"mov dword ptr dst, LOW32(imm)", "mov dword ptr dst + 4, HIGH32(imm)", "ENDM", NULL,
@@ -341,7 +344,7 @@ void InitAutoMacros32(void)
 		"local vname", ".data", "align 8", "vname REAL8 value", ".code", "exitm <vname>", "endm", NULL,
 		"local vname", ".data", "align 8", "vname REAL10 value", ".code", "exitm <vname>", "endm", NULL,
 		"IF @Arch EQ 0", "mov eax, val", "movd reg, eax", "ELSE", "mov eax, val", "vmovd reg, eax", "ENDIF", "ENDM", NULL,
-		"IF @Arch EQ 0", "mov eax, val", "movd reg, eax", "pshufd reg, 0", "ELSE", "mov eax, val", "vmovd reg, eax", "vpshufd reg, reg, 0", "ENDIF", "ENDM", NULL,
+		"IF @Arch EQ 0", "mov eax, val", "movd reg, eax", "pshufd reg, reg, 0", "ELSE", "mov eax, val", "vmovd reg, eax", "vpshufd reg, reg, 0", "ENDIF", "ENDM", NULL,
 		"add reg, number - 1", "and reg, -number", "ENDM", NULL,
 		"arg equ <invoke FuncName>", "FOR var, <args>", "arg CATSTR arg, <, EXPAND_PREFIX(REPARG(var))>", "ENDM", "arg", "EXITM <eax>", "ENDM", NULL,
 		"LOCAL nustr", "quot SUBSTR <arg>, 1, 1", "IFIDN quot, <\">", ".data", "nustr db arg, 0", ".code", "EXITM <ADDR nustr>", "ELSE", "EXITM <ADDR arg>", "ENDIF", "ENDM", NULL,
@@ -368,10 +371,11 @@ void InitAutoMacros32(void)
 		for (j = 0; j < macroLen[i]; j++)
 		{
 			srcLines[j] = (char *)malloc(MAX_LINE_LEN);
-			strcpy(srcLines[j], macCode[(start_pos + j)]);
+			if (srcLines[j])
+				strcpy(srcLines[j], macCode[(start_pos + j)]);
 		}
-		mac = CreateMacro(macName32[i]);
-		ModuleInfo.token_count = Tokenize(macDef32[i], 0, ModuleInfo.tokenarray, 0);
+		mac = CreateMacro((char *)macName32[i]);
+		ModuleInfo.token_count = Tokenize((char *)macDef32[i], 0, ModuleInfo.tokenarray, 0);
 		StoreAutoMacro(mac, 2, ModuleInfo.tokenarray, TRUE, srcLines, 0, macroLen[i]);
 		start_pos += macroLen[i] + 1;
 	}

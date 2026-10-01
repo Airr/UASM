@@ -2,6 +2,7 @@
 #include "codegenv2.h"
 
 #include <time.h>
+#include <ctype.h>
 #include "globals.h"
 #include "parser.h"
 #include "segment.h"
@@ -12,6 +13,7 @@
 #include "types.h"
 #include "macro.h"
 #include "listing.h"
+#include "input.h"
 
 #define OutputCodeByte( x ) OutputByte( x )
 
@@ -34,8 +36,8 @@ struct Instr_Def* InstrHash[16384];
 static unsigned int hash(const uint_8* data, int size)
 /******************************************/
 {
-	uint_64 fnv_basis = 14695981039346656037;
-	uint_64 register fnv_prime = 1099511628211;
+	uint_64 fnv_basis = 14695981039346656037ULL;
+	uint_64 fnv_prime = 1099511628211ULL;
 	uint_64 h = fnv_basis;
 	int cnt = 0;
 	for (cnt = 0; cnt < size; cnt++) {
@@ -70,25 +72,24 @@ uint_32 GenerateInstrHash(struct Instr_Def* pInstruction)
 {
 	uint_8 hashBuffer[32];
 	int len = 0;
-	char* pDst = (char*)&hashBuffer;
-	strcpy(pDst, pInstruction->mnemonic);
+	size_t mlen = strlen(pInstruction->mnemonic);
+	size_t i;
+
+	/* Keep room in the buffer for the four operand type bytes. */
+	if (mlen > sizeof(hashBuffer) - 4)
+		mlen = sizeof(hashBuffer) - 4;
 
 	/* String hash is case-insensitive. */
-	for (int i = 0; i < strlen(pInstruction->mnemonic); i++)
-	{
-		hashBuffer[i] = tolower(hashBuffer[i]);
-	}
+	for (i = 0; i < mlen; i++)
+		hashBuffer[i] = (uint_8)tolower((unsigned char)pInstruction->mnemonic[i]);
 
-	len += strlen(pInstruction->mnemonic);
-	pDst += len;
-	*(pDst + 0) = pInstruction->operand_types[0];
-	*(pDst + 1) = pInstruction->operand_types[1];
-	*(pDst + 2) = pInstruction->operand_types[2];
-	*(pDst + 3) = pInstruction->operand_types[3];
-	*(pDst + 4) = pInstruction->operand_types[4];
+	len = (int)mlen;
+	hashBuffer[len + 0] = (uint_8)pInstruction->operand_types[0];
+	hashBuffer[len + 1] = (uint_8)pInstruction->operand_types[1];
+	hashBuffer[len + 2] = (uint_8)pInstruction->operand_types[2];
+	hashBuffer[len + 3] = (uint_8)pInstruction->operand_types[3];
 	len += 4;
-	pDst += 4;
-	return hash(&hashBuffer, len);
+	return hash(hashBuffer, len);
 }
 
 void BuildInstructionTable(void)
@@ -103,7 +104,10 @@ void BuildInstructionTable(void)
 	for (i = 0; i < instrCount; i++, pInstrTbl++)
 	{
 		struct Instr_Def* pInstr = AllocInstruction();
+		if (pInstr == NULL)
+			break;
 		memcpy(pInstr, pInstrTbl, sizeof(struct Instr_Def));
+		pInstr->next = NULL;
 		hash = GenerateInstrHash(pInstr);
 		InsertInstruction(pInstr, hash);
 	}
@@ -144,7 +148,7 @@ enum op_type DemoteOperand(enum op_type op) {
 }
 
 enum op_type MatchOperand(struct code_info* CodeInfo, struct opnd_item op, struct expr opExpr) {
-	enum op_type result;
+	enum op_type result = OP_N;
 	switch (op.type)
 	{
 	case OP_M:
@@ -222,8 +226,7 @@ enum op_type MatchOperand(struct code_info* CodeInfo, struct opnd_item op, struc
 		if (strcasecmp(opExpr.base_reg->string_ptr, "cr0") == 0 ||
 			strcasecmp(opExpr.base_reg->string_ptr, "cr2") == 0 ||
 			strcasecmp(opExpr.base_reg->string_ptr, "cr3") == 0 ||
-			strcasecmp(opExpr.base_reg->string_ptr, "cr4") == 0 ||
-			strcasecmp(opExpr.base_reg->string_ptr, "cr8") == 0)
+			strcasecmp(opExpr.base_reg->string_ptr, "cr4") == 0)
 		{
 			result = R_CR;
 		}
@@ -347,6 +350,7 @@ enum op_type MatchOperand(struct code_info* CodeInfo, struct opnd_item op, struc
 		break;
 	case OP_MMX:
 		result = MMX64;
+		break;
 	case OP_ST:
 		result = R_ST0;
 		break;
@@ -1167,7 +1171,11 @@ void BuildEVEX(bool* needEvex, unsigned char* evexBytes, struct Instr_Def* instr
 bool CompDisp(struct expr* memOpnd, struct Instr_Def* instr, struct code_info* CodeInfo)
 {
 	int_32 elements = (broadflags == 0 && (instr->evexflags & EVEX_BRD) != 0) ? 1 : instr->op_elements;
-	int_32 elemSize = (instr->op_size / elements);
+	int_32 elemSize;
+
+	if (elements <= 0)
+		elements = 1;
+	elemSize = (instr->op_size / elements);
 	if (CodeInfo->evex_flag)
 	{
 		/* Memory displacement is between -8n and +8n. */
@@ -1397,6 +1405,8 @@ int BuildMemoryEncoding(unsigned char* pmodRM, unsigned char* pSIB, unsigned cha
 		}
 		else
 		{
+			int_64 origDisp = opExpr[(instr->memOpnd & 7)].value64;
+
 			/* Is it 8bit or 16/32bit (RIP only allows 32bit). */
 			if (CompDisp(&opExpr[(instr->memOpnd & 7)], instr, CodeInfo) &&
 				(((!opExpr[instr->memOpnd].sym) || (opExpr[instr->memOpnd].sym && opExpr[instr->memOpnd].sym->state == SYM_STACK)) &&
@@ -1407,6 +1417,9 @@ int BuildMemoryEncoding(unsigned char* pmodRM, unsigned char* pSIB, unsigned cha
 			}
 			else
 			{
+				/* Not using disp8: undo any disp8*N scaling CompDisp applied (value/value64 share a union). */
+				opExpr[(instr->memOpnd & 7)].value64 = origDisp;
+
 				if (ModuleInfo.Ofssize == USE16)
 					*dispSize = 2;	/* 16bit addressing. */
 				else
@@ -1540,7 +1553,7 @@ ret_code CodeGenV2(const char* instr, struct code_info* CodeInfo, uint_32 oldofs
 	/* Fix for byte sized immediate converted to OP_I16 */
 	if ((CodeInfo->opnd[OPND2].type == OP_I16 || CodeInfo->opnd[OPND2].type == OP_I8) && opExpr[1].mem_type != MT_WORD) 
 	{
-		if ((CodeInfo->opnd[OPND2].data32l <= UCHAR_MAX) && (CodeInfo->opnd[OPND2].data32l >= -255)) 
+		if ((CodeInfo->opnd[OPND2].data32l <= UCHAR_MAX) && (CodeInfo->opnd[OPND2].data32l >= -128)) 
 		{
 			if (CodeInfo->opnd[OPND1].type == OP_M || CodeInfo->opnd[OPND1].type == OP_M08) 
 			{
@@ -1701,7 +1714,7 @@ ret_code CodeGenV2(const char* instr, struct code_info* CodeInfo, uint_32 oldofs
 		/* If the matched instruction requires processing of a memory address */
 		if (matchedInstr->memOpnd != NO_MEM)
 			aso = BuildMemoryEncoding(&modRM, &sib, &rexByte, &needModRM, &needSIB,								/* This could result in modifications to REX/VEX/EVEX, modRM and SIB bytes */
-				&dispSize, &displacement, matchedInstr, opExpr, &needB, &needX, &needRR, CodeInfo);
+				&dispSize, &displacement.displacement64, matchedInstr, opExpr, &needB, &needX, &needRR, CodeInfo);
 		modRM |= BuildModRM(matchedInstr->modRM, matchedInstr, opExpr, &needModRM, &needSIB,
 			((matchedInstr->vexflags & VEX) || (matchedInstr->vexflags & EVEX)));								/* Modify the modRM value for any non-memory operands */
 
@@ -1709,7 +1722,7 @@ ret_code CodeGenV2(const char* instr, struct code_info* CodeInfo, uint_32 oldofs
 		   Create REX, VEX or EVEX prefixes                      
 		  ----------------------------------------------------------*/
 		if ((matchedInstr->vexflags & VEX) != 0 && (matchedInstr->evexflags & EVEX_ONLY) == 0 && CodeInfo->evex_flag == 0)
-			BuildVEX(&needVEX, &vexSize, &vexBytes, matchedInstr, opExpr, needB, needX, opCount);				/* Create the VEX prefix bytes for both reg and memory operands */
+			BuildVEX(&needVEX, &vexSize, vexBytes, matchedInstr, opExpr, needB, needX, opCount);				/* Create the VEX prefix bytes for both reg and memory operands */
 
 		  /* Either the instruction can ONLY be EVEX encoded, or user requested VEX->EVEX promotion. */
 		else if ((matchedInstr->evexflags & EVEX_ONLY) != 0 ||

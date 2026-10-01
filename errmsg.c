@@ -389,7 +389,7 @@ char *ErrnoStr( void )
 /********************/
 {
     static char buffer[32];
-    return( ( errno == ENOENT ) ? "ENOENT" : myltoa( errno, buffer, 10, FALSE, FALSE ) );
+    return( ( errno == ENOENT ) ? (char *)"ENOENT" : myltoa( errno, buffer, 10, FALSE, FALSE ) );
 }
 
 /* fatal error (out of memory, unable to open files for write, ...)

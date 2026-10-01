@@ -1278,7 +1278,7 @@ static ret_code omf_write_autodep( void )
 /***************************************/
 {
     struct omf_rec  obj;
-    struct fname_item *curr;
+    char            **curr;
     char            *p = StringBufferEnd;
     unsigned int    len;
     unsigned        idx;
@@ -1289,16 +1289,16 @@ static ret_code omf_write_autodep( void )
         obj.d.coment.attr = CMT_TNP;
         obj.d.coment.cmt_class = CMT_DEPENDENCY; /* 0xE9 */
 
-        len = strlen( curr->fname );
+        len = strlen( *curr );
 #if MAX_STRING_LEN > 255
         if ( len > 255 )
             len = 255; /* length is 1 byte only */
 #endif
         /* v2.11: field mtime removed, timestamp read when needed */
         //*((time_t *)p) = timet2dostime( curr->mtime );
-        *((time_t *)p) = timet2dostime( GetFileTimeStamp( curr->fname ) );
+        *((time_t *)p) = timet2dostime( GetFileTimeStamp( *curr ) );
         *(p + 4) = (unsigned char)len;
-        memcpy( p + 5, curr->fname, len );
+        memcpy( p + 5, *curr, len );
         AttachData( &obj, (uint_8 *)p, len + 5 );
         DebugMsg(("omf_write_autodep(): write record: file=%s, time=%X\n", curr->fname, *((time_t *)p) ));
         omf_write_record( &obj );
@@ -1529,7 +1529,7 @@ static void omf_write_header_dbgcv( void )
     omf_InitRec( &obj, CMD_COMENT );
     obj.d.coment.attr = 0x00;
     obj.d.coment.cmt_class = CMT_MS_OMF; /* MS extensions present */
-    AttachData( &obj, "\001CV", 3 );
+    AttachData( &obj, (uint_8 *)"\001CV", 3 );
     omf_write_record( &obj );
     for ( i = 0; i < DBGS_MAX; i++ ) {
         if ( SymDebSeg[i] = (struct dsym *)CreateIntSegment( SymDebParm[i].name, SymDebParm[i].cname, 0, USE32, TRUE ) ) {

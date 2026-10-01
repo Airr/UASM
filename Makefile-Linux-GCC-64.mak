@@ -11,6 +11,8 @@ inc_dirs  = -IH
 
 #cflags stuff
 
+CFLAGS += -Werror
+
 ifeq ($(DEBUG),0)
 extra_c_flags = -DNDEBUG -O2 -funsigned-char -Wwrite-strings
 OUTD=GccUnixR

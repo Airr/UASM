@@ -71,6 +71,7 @@ extern int_64           minintvalues[];
 extern enum special_token stackreg[];
 extern struct dsym *CurrStruct;
 extern UINT_PTR UTF8toWideChar(const unsigned char *pSource, UINT_PTR nSourceLen, UINT_PTR *nSourceDone, unsigned short *szTarget, UINT_PTR nTargetMax);
+extern void BackPatch(long lbl);
 
 #ifdef __I86__
 #define NUMQUAL (long)
@@ -3151,7 +3152,7 @@ static int ParamIsString(char *pStr, int param, struct dsym* proc) {
 			if (p->sym.target_type)
 			{
 				type = p->sym.target_type;
-				while (type->target_type && (int)type->target_type > 0x2000)
+				while (type->target_type && (uintptr_t)type->target_type > 0x2000)
 				{
 					type = type->target_type;
 					if (type->mem_type == MT_PTR)
@@ -3198,7 +3199,7 @@ static int ParamIsString(char *pStr, int param, struct dsym* proc) {
 static unsigned int hashpjw(const char *s)
 /******************************************/
 {
-	uint_64 fnv_basis = 14695981039346656037;
+	uint_64 fnv_basis = 14695981039346656037ULL;
 	uint_64 register fnv_prime = 1099511628211;
 	uint_64 h;
 	for (h = fnv_basis; *s; ++s) {
@@ -3245,7 +3246,7 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 	size_t slen;
 	char *pSrc;
 	char *pDest;
-	char *labelstr = "__ls";
+	const char *labelstr = "__ls";
 	char buf[32];
 	char c1;
 	char c2;
@@ -3293,7 +3294,7 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 				lbl = SymLookup(buf);
 				SetSymSegOfs(lbl);
 				memset(&buff, 0, 256);
-				pDest = buff;
+				pDest = (char *)buff;
 				finallen = slen;
 
 				while (*pSrc != '"')
@@ -3336,7 +3337,7 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 				lbl->debuginfo = FALSE;
 				lbl->ispublic = 0;
 
-				BackPatch(lbl);
+				BackPatch((long)lbl);
 
 				// invoke parameter is a raw ascii string, substitute in the our new label pointing to this raw string in .data segment. 
 				sprintf(stringparam[currParm], "%s", buf);
@@ -3397,7 +3398,7 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 				}
 				*pDest++ = 0;
 
-				j = UTF8toWideChar(&buff2, slen, NULL, (unsigned short *)&buff, slen);
+				j = UTF8toWideChar((const unsigned char *)buff2, slen, NULL, (unsigned short *)&buff, slen);
 				/* j contains a proper number of wide chars, it can be different than slen, v2.38 */
 				SetSymSegOfs(lbl);
 				OutputBytes((unsigned char *)&buff, (j * 2) + 2, NULL);
@@ -3413,7 +3414,7 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 				lbl->debuginfo = FALSE;
 				lbl->ispublic = 0;
 
-				BackPatch(lbl);
+				BackPatch((long)lbl);
 
 				// invoke parameter is a raw ascii string, substitute in the our new label pointing to this raw string in .data segment.
 				sprintf(stringparam[currParm], "%s", buf);
@@ -4213,31 +4214,31 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 					AddLineQueueX(" push %r", T_AX);
 				}
 				else { /* cpu >= 80186 */
-					char *instr = "";
+					const char *instr = "";
 					char *suffix;
 					int qual = EMPTY;
 					//if ( asize != psize ) {
 					if (psize != pushsize) {
 						switch (psize) {
 						case 2:
-							instr = "w";
+							instr = (char *)"w";
 							break;
 						case 6: /* v2.04: added */
 								/* v2.11: use pushw only for 16-bit target */
 							if (Ofssize == USE16)
-								suffix = "w";
+								suffix = (char *)"w";
 							else if (Ofssize == USE32 && CurrWordSize == 2)
-								suffix = "d";
+								suffix = (char *)"d";
 							else
-								suffix = "";
+								suffix = (char *)"";
 							AddLineQueueX(" push%s (%s) shr 32t", suffix, fullparam);
 							/* no break */
 						case 4:
 							if ((ModuleInfo.curr_cpu & P_CPU_MASK) >= P_386)
-								instr = "d";
+								instr = (char *)"d";
 							else {
 								AddLineQueueX(" pushw %r (%s)", T_HIGHWORD, fullparam);
-								instr = "w";
+								instr = (char *)"w";
 								qual = T_LOWWORD;
 							}
 							break;
@@ -4250,7 +4251,7 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 							if (opnd.kind == EXPR_CONST || opnd.kind == EXPR_FLOAT) {
 								AddLineQueueX(" pushd %r (%s)", T_HIGH32, fullparam);
 								qual = T_LOW32;
-								instr = "d";
+								instr = (char *)"d";
 								break;
 							}
 						default:
@@ -4428,6 +4429,13 @@ ret_code InvokeDirective(int i, struct asm_tok tokenarray[])
 	curr = info->paralist;
 	parmpos = i;
 
+DebugMsg((
+    "INVOKE DEBUG: name=%s formal=%u i=%u Token_Count=%u\n",
+    sym->name,
+    numParam,
+    i,
+    Token_Count
+));
 	if (!(info->has_vararg)) {
 		/* check if there is a superfluous parameter in the INVOKE call */
 		if (PushInvokeParam(i, tokenarray, proc, NULL, numParam, &r0flags) != ERROR) {

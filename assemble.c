@@ -89,7 +89,7 @@ extern int_32           LastCodeBufSize;
 extern char             *DefaultDir[NUM_FILE_TYPES];
 extern const char       *ModelToken[];
 #if FASTMEM==0
-extern void             FreeLibQueue();
+extern void             FreeLibQueue(void);
 #endif
 #include "Colors.h"
 #ifdef _WIN32
@@ -185,7 +185,7 @@ static void CheckBOM(FILE *f)
 		rewind(f);
 }
 
-extern void RewindToWin64() 
+extern void RewindToWin64(void) 
 {
 
 	if (!(Options.output_format == OFORMAT_BIN && Options.sub_format == SFORMAT_NONE))
@@ -1039,7 +1039,8 @@ static void PassOneChecks( void )
          */
 #if FASTPASS
         /* UASM 2.55 , altname is set to 1 when the type is undefined */
-        if ( curr->sym.altname > 1 ) 
+        if ( curr->sym.altname != NULL &&
+             curr->sym.altname != (struct asym *)1 ) 
 		{
             if ( curr->sym.altname->state == SYM_INTERNAL ) 
 			{
@@ -1414,7 +1415,7 @@ void close_files( void )
 
 /* get default file extension for error, object and listing files */
 
-static char *GetExt( int type )
+static const char *GetExt( int type )
 /*****************************/
 {
     switch ( type ) {
@@ -1781,7 +1782,7 @@ int EXPQUAL AssembleModule( const char *source )
 		{
 			#ifdef _WIN32
 						SetConsoleTextAttribute(hConsole, WIN_LTWHITE | (screenBufferInfo.wAttributes & 0xfff0));
-						printf("%s: %lu lines, ", GetFNamePart(GetFName(ModuleInfo.srcfile)->fname), GetLineNumber());
+						printf("%s: %u lines, ", GetFNamePart(GetFName(ModuleInfo.srcfile)->fname), GetLineNumber());
 						SetConsoleTextAttribute(hConsole, WIN_LTGREEN | (screenBufferInfo.wAttributes & 0xfff0));
 						printf("%u passes", Parse_Pass + 1);
 						SetConsoleTextAttribute(hConsole, WIN_LTWHITE | (screenBufferInfo.wAttributes & 0xfff0));
@@ -1798,7 +1799,7 @@ int EXPQUAL AssembleModule( const char *source )
 						printf("%u errors\n", ModuleInfo.g.error_count);
 						SetConsoleTextAttribute(hConsole, screenBufferInfo.wAttributes);
 			#else
-						printf(FWHT("%s: %lu lines, "), GetFNamePart(GetFName(ModuleInfo.srcfile)->fname), GetLineNumber());
+						printf(FWHT("%s: %u lines, "), GetFNamePart(GetFName(ModuleInfo.srcfile)->fname), GetLineNumber());
 						printf(FGRN("%u passes"), Parse_Pass + 1);
 						printf(", ");
 						printf(FCYN("%u ms"), endtime - starttime);

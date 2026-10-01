@@ -123,7 +123,7 @@ struct leaf32 {
 
 #pragma pack(pop)
 
-uint_8* SetPrefixName(uint_8* p, uint_8* name, int len)
+uint_8* SetPrefixName(uint_8* p, const uint_8* name, int len)
 {
 	if (Options.debug_symbols < CV_SIGNATURE_C13)
 		*p++ = len;
@@ -1254,14 +1254,15 @@ static uint_8* cv_FlushSection(dbgcv* cv, uint_32 signature, uint_32 ex)
 	seg->e.seginfo->current_loc = seg->e.seginfo->start_loc + currsize + ex + sizeof(CV_SECTION);
 	seg->e.seginfo->start_loc = seg->e.seginfo->current_loc;
 
-	return(cv->section);
+	return((uint_8*)cv->section);
 }
 
 
 #define USEMD5
 
 #ifdef USEMD5
-#define BUFSIZ 1024*4
+#undef BUFSIZ
+#define BUFSIZ (1024*4)
 #define MD5_LENGTH ( sizeof( uint_32 ) + sizeof( uint_16 ) + 16 + sizeof( uint_16 ) )
 
 static int calc_md5(const char* filename, unsigned char* sum)
@@ -1353,7 +1354,8 @@ void cv_write_debug_tables(struct dsym* symbols, struct dsym* types, void* pv)
 		}
 
 		cv.currdir = LclAlloc(_MAX_PATH * 4);
-		_getcwd(cv.currdir, _MAX_PATH * 4);
+		if (_getcwd(cv.currdir, _MAX_PATH * 4) == NULL)
+			cv.currdir[0] = '\0';
 		objname = cv.currdir + strlen(cv.currdir);
 
 		/* source filename string table */

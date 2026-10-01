@@ -33,6 +33,8 @@ extern struct asym          *sym_Interface;
 #define OPTFUNC( name ) extern ret_code OPTQUAL name( int *pi, struct asm_tok tokenarray[] )
 extern void UpdateStackBase( struct asym *, void * );
 extern void UpdateProcStatus( struct asym *, void * );
+extern void CreateMacroLibCases64(void);
+extern void CreateMacroLibCases32(void);
 
 static struct asym *AddPredefinedConstant(const char *name, int value)
 /**********************************************************************/
@@ -1121,7 +1123,7 @@ static struct dll_desc *IncludeDll( const char *name )
     *q = node;
 
 #if AMD64_SUPPORT
-    ModuleInfo.g.imp_prefix = ( ( ModuleInfo.defOfssize == USE64 ) ? "__imp_" : "_imp_" );
+    ModuleInfo.g.imp_prefix = (char *)( ( ModuleInfo.defOfssize == USE64 ) ? "__imp_" : "_imp_" );
 #else
     ModuleInfo.g.imp_prefix = "_imp_";
 #endif
