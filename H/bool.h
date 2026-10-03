@@ -31,7 +31,7 @@
 
 
 // 1. Handle the 'bool' type safely across modern and legacy compilers
-#if defined(__cplusplus) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || (defined(__GNUC__) && __GNUC__ >= 14)
+#if defined(__cplusplus) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202000L) || (defined(__GNUC__) && __GNUC__ >= 14)
     // 'bool' is already a built-in native keyword. Do not typedef it.
 #else
     // Legacy fallback for older C standards (C99, C11, Watcom, etc.)
