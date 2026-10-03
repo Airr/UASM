@@ -88,7 +88,7 @@ struct print_item {
     short type;
     short flags;
     const short *capitems;
-    void (*function)();
+    void (*function)( const struct asym *, const struct dsym *, int_32 );
 };
 
 
@@ -108,17 +108,29 @@ static void log_segment( const struct asym *, const struct asym *group );
 static void log_group(   const struct asym *, const struct dsym * );
 static void log_proc(    const struct asym * );
 
+/* uniform-signature wrappers, so the table below can use one function pointer type.
+ * LstWriteCRef() passes the SEGS queue head as 2nd argument for LQ_GRPS only
+ * (PRF_ADDSEG); for all other entries it is NULL.
+ */
+static void cr_macro(   const struct asym *sym, const struct dsym *d, int_32 ofs ) { (void)d; (void)ofs; log_macro( sym ); }
+static void cr_struct(  const struct asym *sym, const struct dsym *d, int_32 ofs ) { (void)d; (void)ofs; log_struct( sym, NULL, 0 ); }
+static void cr_record(  const struct asym *sym, const struct dsym *d, int_32 ofs ) { (void)d; (void)ofs; log_record( sym ); }
+static void cr_typedef( const struct asym *sym, const struct dsym *d, int_32 ofs ) { (void)d; (void)ofs; log_typedef( sym ); }
+static void cr_segment( const struct asym *sym, const struct dsym *d, int_32 ofs ) { (void)d; (void)ofs; log_segment( sym, NULL ); }
+static void cr_group(   const struct asym *sym, const struct dsym *d, int_32 ofs ) { (void)ofs; log_group( sym, d ); }
+static void cr_proc(    const struct asym *sym, const struct dsym *d, int_32 ofs ) { (void)d; (void)ofs; log_proc( sym ); }
+
 static const struct print_item cr[] = {
-    { LQ_MACROS,          0, maccap, log_macro   },
-    { LQ_STRUCTS,         0, strcap, log_struct  },
+    { LQ_MACROS,          0, maccap, cr_macro    },
+    { LQ_STRUCTS,         0, strcap, cr_struct   },
 #ifdef DEBUG_OUT
-    { LQ_UNDEF_TYPES,     0, strcap, log_struct  },
+    { LQ_UNDEF_TYPES,     0, strcap, cr_struct   },
 #endif
-    { LQ_RECORDS,         0, reccap, log_record  },
-    { LQ_TYPEDEFS,        0, tdcap,  log_typedef },
-    { LQ_SEGS,            0, segcap, log_segment },
-    { LQ_GRPS,   PRF_ADDSEG, NULL,   log_group   },
-    { LQ_PROCS,           0, prccap, log_proc    },
+    { LQ_RECORDS,         0, reccap, cr_record   },
+    { LQ_TYPEDEFS,        0, tdcap,  cr_typedef  },
+    { LQ_SEGS,            0, segcap, cr_segment  },
+    { LQ_GRPS,   PRF_ADDSEG, NULL,   cr_group    },
+    { LQ_PROCS,           0, prccap, cr_proc     },
 };
 
 struct lstleft {
