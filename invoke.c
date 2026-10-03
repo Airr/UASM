@@ -3334,7 +3334,7 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 				lbl->total_length = finallen;
 				lbl->total_size = finallen;
 				//lbl->max_offset = finallen + lbl->offset;
-				lbl->debuginfo = FALSE;
+				lbl->debuginfo = NULL;
 				lbl->ispublic = 0;
 
 				BackPatch((long)lbl);
@@ -3411,7 +3411,7 @@ static int PushInvokeParam(int i, struct asm_tok tokenarray[], struct dsym *proc
 				lbl->total_length = j;
 				lbl->total_size = j;
 				//lbl->max_offset = j + lbl->offset;
-				lbl->debuginfo = FALSE;
+				lbl->debuginfo = NULL;
 				lbl->ispublic = 0;
 
 				BackPatch((long)lbl);
