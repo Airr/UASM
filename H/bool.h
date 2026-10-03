@@ -30,13 +30,30 @@
 ****************************************************************************/
 
 
-#if !defined( BOOL_DEFINED )  &&  !defined( bool ) && !(__WATCOMC__ >= 1070 && defined(__cplusplus))
-    #define BOOL_DEFINED
-    typedef unsigned char bool;
+// 1. Handle the 'bool' type safely across modern and legacy compilers
+#if defined(__cplusplus) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || (defined(__GNUC__) && __GNUC__ >= 14)
+    // 'bool' is already a built-in native keyword. Do not typedef it.
+#else
+    // Legacy fallback for older C standards (C99, C11, Watcom, etc.)
+    #if !defined( BOOL_DEFINED ) && !defined( bool ) && !(__WATCOMC__ >= 1070 && defined(__cplusplus))
+        #define BOOL_DEFINED
+        typedef unsigned char bool;
+    #endif
 #endif
+
+// 2. Ensure TRUE and FALSE are always defined, adapting to whatever environment we are in
 #ifndef TRUE
-    #define TRUE 1
+    #if defined(__cplusplus) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || (defined(__GNUC__) && __GNUC__ >= 14)
+        #define TRUE  true  // Map to native true keyword in modern environments
+    #else
+        #define TRUE  1     // Fallback for legacy environments
+    #endif
 #endif
+
 #ifndef FALSE
-    #define FALSE 0
+    #if defined(__cplusplus) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || (defined(__GNUC__) && __GNUC__ >= 14)
+        #define FALSE false // Map to native false keyword in modern environments
+    #else
+        #define FALSE 0     // Fallback for legacy environments
+    #endif
 #endif
