@@ -24,6 +24,12 @@
 #include "fastpass.h"
 #include "myassert.h"
 
+/* writable empty string (asym.name and the local name pointers are char *) */
+static char szEmptyName[] = "";
+
+/* defined in symbols.c */
+extern void SymSimd( struct dsym *sym );
+
 /* v2.04: changed to 0 */
 //#define ANYNAME 1 /* fixme: this probably should be changed to 0 */
 #define ANYNAME 0
@@ -202,7 +208,7 @@ ret_code StructDirective( int i, struct asm_tok tokenarray[] )
             name = tokenarray[i].string_ptr;
             i++;
         } else {
-            name = "";
+            name = szEmptyName;
         }
     } else {
         name = tokenarray[0].string_ptr;
@@ -402,7 +408,7 @@ ret_code CStructDirective(int i, struct asm_tok tokenarray[])
 			i++;
 		}
 		else {
-			name = "";
+			name = szEmptyName;
 		}
 	}
 	else {
@@ -617,7 +623,7 @@ ret_code RAWStructDirective(int i, struct asm_tok tokenarray[])
 			i++;
 		}
 		else {
-			name = "";
+			name = szEmptyName;
 		}
 	}
 	else {
@@ -841,7 +847,7 @@ ret_code COMStructDirective(int i, struct asm_tok tokenarray[])
 			i++;
 		}
 		else {
-			name = "";
+			name = szEmptyName;
 		}
 	}
 	else {
@@ -1116,7 +1122,7 @@ ret_code EndstructDirective( int i, struct asm_tok tokenarray[] )
         //sym->name = dir->sym.name;
         //sym->name_size = strlen( dir->sym.name );
         sym->total_size = dir->sym.total_size;
-        dir->sym.name = ""; /* the type becomes anonymous */
+        dir->sym.name = szEmptyName; /* the type becomes anonymous */
         dir->sym.name_size = 0;
     }
 
@@ -1299,7 +1305,7 @@ struct asym *CreateStructField( int loc, struct asm_tok tokenarray[], const char
         memcpy( f->sym.name, name, len );
         f->sym.name[len] = NULLC;
     } else
-        f->sym.name = "";
+        f->sym.name = szEmptyName;
     f->sym.state = SYM_STRUCT_FIELD;
     f->sym.list = ModuleInfo.cref;
     f->sym.isdefined = TRUE;

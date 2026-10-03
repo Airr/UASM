@@ -211,10 +211,28 @@ static const struct vectorcall_conv vectorcall_tab[] = {
 #endif
 };
 
+/* SysV call table uses a four-argument parameter checker.
+ * The legacy MSC/WATCOM checkers don't need the vector-register counter,
+ * so adapt them here instead of assigning incompatible function pointers.
+ */
+static int sysv_ms32_pcheck(struct dsym *proc, struct dsym *paranode, int *used, int *vecused)
+{
+	(void)vecused;
+	return(ms32_pcheck(proc, paranode, used));
+}
+
+#if OWFC_SUPPORT
+static int sysv_watc_pcheck(struct dsym *proc, struct dsym *paranode, int *used, int *vecused)
+{
+	(void)vecused;
+	return(watc_pcheck(proc, paranode, used));
+}
+#endif
+
 static const struct sysvcall_conv sysvcall_tab[] = {
-	{ ms32_pcheck, ms32_return },  /* FCT_MSC */
+	{ sysv_ms32_pcheck, ms32_return },  /* FCT_MSC */
 #if OWFC_SUPPORT		
-	{ watc_pcheck, watc_return },  /* FCT_WATCOMC */
+	{ sysv_watc_pcheck, watc_return },  /* FCT_WATCOMC */
 #endif		
 #if SYSV_SUPPORT		
 	{ sysv_pcheck, sysv_return }   /* FCT_WIN64 / SYSTEMV */
@@ -818,7 +836,7 @@ static ret_code ParseParams(struct dsym *proc, int i, struct asm_tok tokenarray[
 			if (paracurr)
 				name = paracurr->sym.name;
 			else
-				name = "";
+				name = (char *)"";
 		}
 		else {
 
@@ -2235,7 +2253,7 @@ static void WriteSEHData(struct dsym *proc)
 /*******************************************/
 {
 	struct dsym *xdata;
-	char *segname = ".xdata";
+	const char *segname = ".xdata";
 	int i;
 	int simplespec;
 	uint_8 olddotname;
@@ -2272,7 +2290,7 @@ static void WriteSEHData(struct dsym *proc)
 		UNW_VERSION, unw_info.Flags, unw_info.SizeOfProlog,
 		unw_info.CountOfCodes, unw_info.FrameRegister, unw_info.FrameOffset);
 	if (unw_info.CountOfCodes) {
-		char *pfx = "dw";
+		const char *pfx = "dw";
 		buffer[0] = NULLC;
 		/* write the codes from right to left */
 		for (i = unw_info.CountOfCodes; i; i--) {
@@ -2305,7 +2323,7 @@ static void WriteSEHData(struct dsym *proc)
 	}
 	else {
 		segname = segnamebuff;
-		sprintf(segname, ".pdata$%04u", GetSegIdx(proc->sym.segment));
+		sprintf(segnamebuff, ".pdata$%04u", GetSegIdx(proc->sym.segment));
 		simplespec = 0;
 		unw_segs_defined |= 2;
 	}

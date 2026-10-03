@@ -106,6 +106,10 @@ static const char szTimeFmt[] = "%X"; /* locale's time */
 
 static struct asym *symPC; /* the $ symbol */
 
+/* writable storage for predefined text macro values (asym.string_ptr is char *) */
+static char szVersion[] = "1000";
+static char szNull[] = "";
+
 struct tmitem {
     const char *name;
     char *value;
@@ -117,7 +121,7 @@ static const struct tmitem tmtab[] = {
     /* @Version contains the Masm compatible version */
     /* v2.06: value of @Version changed to 800 */
     //{"@Version",  "615", NULL },
-    {"@Version",  "1000", NULL },
+    {"@Version",  szVersion, NULL },
     {"@Date",     szDate, NULL },
     {"@Time",     szTime, NULL },
     {"@FileName", ModuleInfo.name, NULL },
@@ -125,7 +129,7 @@ static const struct tmitem tmtab[] = {
     /* v2.09: @CurSeg value is never set if no segment is ever opened.
      * this may have caused an access error if a listing was written.
      */
-    {"@CurSeg",   "", &symCurSeg }
+    {"@CurSeg",   szNull, &symCurSeg }
 };
 
 struct eqitem {
@@ -155,7 +159,7 @@ static bool structLookup = FALSE;
 static unsigned int hashpjw( const char *s )
 /******************************************/
 {
-	uint_64 fnv_basis = 14695981039346656037;
+	uint_64 fnv_basis = 14695981039346656037ULL;
 	uint_64 register fnv_prime = 1099511628211;
 	uint_64 h;
 	for (h = fnv_basis; *s; ++s) {
@@ -248,7 +252,7 @@ struct asym *SymAlloc( const char *name )
         memcpy( sym->name, name, len );
         sym->name[len] = NULLC;
     } else
-        sym->name = "";
+        sym->name = szNull;
     return( sym );
 }
 

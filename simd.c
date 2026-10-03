@@ -13,10 +13,10 @@ and their sub-types
 
 extern void     AddLineQueue(const char *line);
 extern void     AddLineQueueX(const char *fmt, ...);
+extern void     RunLineQueue(void);
 
-void AddSimdTypes()
+void AddSimdTypes(void)
 {
-	struct asym* sym = 0;
 
 	AddLineQueue("__m128b struct");
 	AddLineQueue("b0 BYTE ?");
